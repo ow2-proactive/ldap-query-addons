@@ -1,0 +1,75 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+        maven {
+            url "http://repository.activeeon.com/content/groups/proactive/"
+        }
+    }
+
+    dependencies {
+        classpath "com.diffplug.gradle.spotless:spotless:2.4.0"
+        classpath "org.ow2.proactive:coding-rules:1.0.0"
+    }
+    dependencies {
+        delete "gradle/ext"
+        ant.unjar src: configurations.classpath.find { it.name.startsWith("coding-rules") }, dest: 'gradle/ext'
+    }
+}
+
+group 'org.ow2.proactive'
+version projectVersion
+
+apply plugin: 'java'
+apply plugin: 'maven'
+
+apply from: "$rootDir/gradle/ext/coding-format.gradle"
+
+configurations {
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+compileJava {
+    sourceCompatibility = 1.8
+    targetCompatibility = 1.8
+}
+
+repositories {
+    jcenter()
+}
+
+uploadArchives {
+    repositories {
+        mavenDeployer {
+            snapshotRepository(url: "http://repository.activeeon.com/content/repositories/snapshots/") {
+                authentication(userName: "${System.getProperty('nexusUsername')}",
+                        password: "${System.getProperty('nexusPassword')}")
+            }
+            repository(url: "http://repository.activeeon.com/content/repositories/releases/") {
+                authentication(userName: "${System.getProperty('nexusUsername')}",
+                        password: "${System.getProperty('nexusPassword')}")
+            }
+        }
+    }
+}
+
+defaultTasks 'clean', 'jar'
+
+
+dependencies {
+    testCompile 'org.hamcrest:java-hamcrest:2.0.0.0'
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-core:1.10.19'
+}
+
+jar {
+    from {
+        configurations.compile
+                .findAll { !it.name.toLowerCase().contains("slf4j") }
+                .collect { it.isDirectory() ? it : zipTree(it) }
+    }
+}
