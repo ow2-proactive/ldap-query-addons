@@ -49,7 +49,9 @@ package org.ow2.proactive.addons.ldap_query;/*
                                             * or a different license than the AGPL.
                                             */
 
+import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
@@ -89,13 +91,18 @@ public class LDAPClient {
     }
 
     public static String searchQueryLDAP(String ldapServerUrl, String username, String password, String searchBase,
-            String searchFilter) {
+            String searchFilter, String[] attributesToReturn) {
         DirContext ctx = null;
         NamingEnumeration results = null;
         ObjectMapper mapper = new ObjectMapper();
         Response response;
         List attributesList = new LinkedList();
         String resultOutput = "";
+        HashSet<String> attrReturn = new HashSet<>(Arrays.asList(attributesToReturn));
+        boolean allAttrs = false;
+        if (attrReturn.isEmpty()) {
+            allAttrs = true;
+        }
         try {
             ctx = connect(ldapServerUrl, username, password);
             SearchControls controls = new SearchControls();
@@ -109,7 +116,12 @@ public class LDAPClient {
                 Map<String, String> attrMap = new HashMap();
                 for (NamingEnumeration ae = attributes.getAll(); ae.hasMore();) {
                     Attribute attr = (Attribute) ae.next();
-                    attrMap.put(attr.getID(), attr.get().toString());
+                    String attrId = attr.getID();
+                    if (allAttrs) {
+                        attrMap.put(attrId, attr.get().toString());
+                    } else if (attrReturn.contains(attrId)) {
+                        attrMap.put(attrId, attr.get().toString());
+                    }
                 }
                 attributesList.add(attrMap);
             }
@@ -139,13 +151,16 @@ public class LDAPClient {
     }
 
     public static void main(String[] args) {
-        String searchBase = "cn=yaro,dc=activeeon,dc=com1";
-        String searchFilter = "(objectclass=*)";
+        String searchBase = "dc=activeeon,dc=com";
+        //        String searchFilter = "(objectclass=*)";
 
+        String searchFilter = "(cn=yaro)";
+        String[] attributesToReturn = { "uidNumber", "cn" };
         System.out.println(searchQueryLDAP("ldap://192.168.1.136:389/",
                                            "cn=admin,dc=activeeon,dc=com",
                                            "activeeon",
                                            searchBase,
-                                           searchFilter));
+                                           searchFilter,
+                                           attributesToReturn));
     }
 }
