@@ -49,6 +49,7 @@ package org.ow2.proactive.addons.ldap_query;/*
                                             * or a different license than the AGPL.
                                             */
 
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -74,40 +75,127 @@ import org.ow2.proactive.addons.ldap_query.model.Response;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 
+
+@Setter
+@AllArgsConstructor
+@NoArgsConstructor
 public class LDAPClient {
     private final static String LDAP_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 
     private final static String SECURITY_AUTHENTICATION_METHOD = "simple";
 
-    private static DirContext connect(String ldapServerUrl, String username, String password) throws NamingException {
+    private static final String REGEX_LIST_SEPARATOR = ",\\s?";
+
+    /*
+     * Define name of variables that can be passed to the LDAP Query task
+     */
+
+    public static final String ARG_URL = "ldapUrl";
+
+    public static final String ARG_USERNAME = "ldapUsername";
+
+    public static final String ARG_PASSWORD = "ldapPassword";
+
+    public static final String ARG_SEARCH_BASE = "ldapSearchBase";
+
+    public static final String ARG_SEARCH_FILTER = "ldapSearchFilter";
+
+    public static final String ARG_SELECTED_ATTRIBUTES = "ldapSelectedAttributes";
+
+    protected String ldapUrl;
+
+    protected String ldapUsername;
+
+    protected String ldapPassword;
+
+    protected String ldapSearchBase;
+
+    protected String ldapSearchFilter;
+
+    protected String ldapSelectedAttributes;
+
+    public LDAPClient(Map<String, Serializable> actualTaskVariables, Map<String, Serializable> credentials) {
+        List<String> taskVariablesList = new LinkedList<>();
+        taskVariablesList.add(ARG_URL);
+        taskVariablesList.add(ARG_USERNAME);
+        taskVariablesList.add(ARG_PASSWORD);
+        taskVariablesList.add(ARG_SEARCH_BASE);
+        taskVariablesList.add(ARG_SEARCH_FILTER);
+        taskVariablesList.add(ARG_SELECTED_ATTRIBUTES);
+
+        Map mapWithVariables;
+        for (String variableName : taskVariablesList) {
+            if (actualTaskVariables.containsKey(variableName)) {
+                mapWithVariables = actualTaskVariables;
+            } else {
+                mapWithVariables = credentials;
+            }
+            setLdapClientFields(mapWithVariables, variableName);
+        }
+    }
+
+    private void setLdapClientFields(Map<String, Serializable> taskVariablesMap, String variableName) {
+        if (!taskVariablesMap.containsKey(variableName)) {
+            throw new IllegalArgumentException("The missed argument for LDAPClient, variable name: " + variableName);
+        }
+        String varValue = getAsString(taskVariablesMap, variableName);
+        try {
+            this.getClass().getDeclaredField(variableName).set(this, varValue);
+        } catch (Exception e) {
+            throw new IllegalArgumentException("The variable name is wrong:" + variableName, e);
+        }
+    }
+
+    private String getAsString(Map<String, Serializable> map, String argFrom) {
+        return (String) map.get(argFrom);
+    }
+
+    private String[] splitAttributes(String attrList) {
+        String[] splittedAttr = new String[0];
+        if (attrList != null && !attrList.trim().isEmpty()) {
+            splittedAttr = attrList.split(REGEX_LIST_SEPARATOR);
+
+        }
+        return splittedAttr;
+    }
+
+    private DirContext connect() throws NamingException {
         Hashtable env = new Hashtable();
         env.put(Context.INITIAL_CONTEXT_FACTORY, LDAP_FACTORY);
-        env.put(Context.PROVIDER_URL, ldapServerUrl);
+        env.put(Context.PROVIDER_URL, ldapUrl);
         env.put(Context.SECURITY_AUTHENTICATION, SECURITY_AUTHENTICATION_METHOD);
-        env.put(Context.SECURITY_CREDENTIALS, password);
-        env.put(Context.SECURITY_PRINCIPAL, username);
+        env.put(Context.SECURITY_CREDENTIALS, ldapPassword);
+        env.put(Context.SECURITY_PRINCIPAL, ldapUsername);
         return new InitialDirContext(env);
     }
 
-    public static String searchQueryLDAP(String ldapServerUrl, String username, String password, String searchBase,
-            String searchFilter, String[] attributesToReturn) {
+    public String searchQueryLDAP() {
         DirContext ctx = null;
         NamingEnumeration results = null;
         ObjectMapper mapper = new ObjectMapper();
         Response response;
-        List attributesList = new LinkedList();
-        String resultOutput = "";
-        HashSet<String> attrReturn = new HashSet<>(Arrays.asList(attributesToReturn));
         boolean allAttrs = false;
-        if (attrReturn.isEmpty()) {
+        String resultOutput = new String();
+        List attributesList = new LinkedList();
+        HashSet<String> attrReturn = new HashSet();
+
+        String[] attributesToReturn = splitAttributes(ldapSelectedAttributes);
+
+        if (attributesToReturn.length == 0) {
             allAttrs = true;
+        } else {
+            attrReturn = new HashSet<>(Arrays.asList(attributesToReturn));
         }
+
         try {
-            ctx = connect(ldapServerUrl, username, password);
+            ctx = connect();
             SearchControls controls = new SearchControls();
             controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            results = ctx.search(searchBase, searchFilter, controls);
+            results = ctx.search(ldapSearchBase, ldapSearchFilter, controls);
 
             //iterate throw all attributes in the result of search query
             while (results.hasMore()) {
@@ -117,9 +205,7 @@ public class LDAPClient {
                 for (NamingEnumeration ae = attributes.getAll(); ae.hasMore();) {
                     Attribute attr = (Attribute) ae.next();
                     String attrId = attr.getID();
-                    if (allAttrs) {
-                        attrMap.put(attrId, attr.get().toString());
-                    } else if (attrReturn.contains(attrId)) {
+                    if ((!allAttrs && attrReturn.contains(attrId)) || allAttrs) {
                         attrMap.put(attrId, attr.get().toString());
                     }
                 }
@@ -151,16 +237,36 @@ public class LDAPClient {
     }
 
     public static void main(String[] args) {
+
         String searchBase = "dc=activeeon,dc=com";
         //        String searchFilter = "(objectclass=*)";
 
         String searchFilter = "(cn=yaro)";
-        String[] attributesToReturn = { "uidNumber", "cn" };
-        System.out.println(searchQueryLDAP("ldap://192.168.1.136:389/",
-                                           "cn=admin,dc=activeeon,dc=com",
-                                           "activeeon",
-                                           searchBase,
-                                           searchFilter,
-                                           attributesToReturn));
+        //        String attributesToReturnAsString = "uidNumber, cn";
+        String attributesToReturnAsString = "";
+
+        String ldapUrl = "ldap://192.168.1.136:389";
+        String ldapUsername = "cn=admin,dc=activeeon,dc=com";
+        String ldapPassword = "activeeon";
+
+        LDAPClient ldapClient = new LDAPClient(ldapUrl,
+                                               "cn=admin,dc=activeeon,dc=com",
+                                               "activeeon",
+                                               searchBase,
+                                               searchFilter,
+                                               attributesToReturnAsString);
+
+        System.out.println(ldapClient.searchQueryLDAP());
+
+        Map mapVariables = new HashMap();
+        mapVariables.put("ldapUrl", ldapUrl);
+        mapVariables.put("ldapSearchBase", searchBase);
+        mapVariables.put("ldapSearchFilter", searchFilter);
+        mapVariables.put("ldapSelectedAttributes", attributesToReturnAsString);
+        Map mapCredentials = new HashMap();
+        mapCredentials.put("ldapUsername", ldapUsername);
+        mapCredentials.put("ldapPassword", ldapPassword);
+        LDAPClient ldapClientFromMap = new LDAPClient(mapVariables, mapCredentials);
+        System.out.println(ldapClientFromMap.searchQueryLDAP());
     }
 }
