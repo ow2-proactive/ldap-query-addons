@@ -23,24 +23,32 @@
  * If needed, contact us to obtain a release under GPL Version 2 or 3
  * or a different license than the AGPL.
  */
-package org.ow2.proactive.addons.ldap_query.model;
+package org.ow2.proactive.addons.ldap_query;
 
-import lombok.Getter;
-import lombok.NoArgsConstructor;
+import java.util.Hashtable;
 
+import javax.naming.Context;
+import javax.naming.NamingException;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
 
 /**
  * @author ActiveEon Team
- * @since 1/20/2017
+ * @since 1/25/2017
  */
+public class LDAPConnectionUtility {
 
-@Getter
-@NoArgsConstructor
-public class ErrorResponse extends Response {
-    private String errorMessage;
+    private final static String LDAP_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 
-    public ErrorResponse(String status, String errorMessage) {
-        this.status = status;
-        this.errorMessage = errorMessage;
+    private final static String SECURITY_AUTHENTICATION_METHOD = "simple";
+
+    public static DirContext connect(String ldapUrl, String ldapUsername, String ldapPassword) throws NamingException {
+        Hashtable env = new Hashtable();
+        env.put(Context.INITIAL_CONTEXT_FACTORY, LDAP_FACTORY);
+        env.put(Context.PROVIDER_URL, ldapUrl);
+        env.put(Context.SECURITY_AUTHENTICATION, SECURITY_AUTHENTICATION_METHOD);
+        env.put(Context.SECURITY_CREDENTIALS, ldapPassword);
+        env.put(Context.SECURITY_PRINCIPAL, ldapUsername);
+        return new InitialDirContext(env);
     }
 }

@@ -53,18 +53,14 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 
-import javax.naming.Context;
 import javax.naming.NamingEnumeration;
-import javax.naming.NamingException;
 import javax.naming.directory.Attribute;
 import javax.naming.directory.Attributes;
 import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
@@ -84,9 +80,7 @@ import lombok.Setter;
 @AllArgsConstructor
 @NoArgsConstructor
 public class LDAPClient {
-    private final static String LDAP_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 
-    private final static String SECURITY_AUTHENTICATION_METHOD = "simple";
 
     private static final String REGEX_LIST_SEPARATOR = ",\\s?";
 
@@ -117,6 +111,8 @@ public class LDAPClient {
     protected String ldapSearchFilter;
 
     protected String ldapSelectedAttributes;
+
+    protected DirContext ldapConnection;
 
     public LDAPClient(Map<String, Serializable> actualTaskVariables, Map<String, Serializable> credentials) {
         List<String> taskVariablesList = new LinkedList<>();
@@ -163,18 +159,9 @@ public class LDAPClient {
         return splittedAttr;
     }
 
-    private DirContext connect() throws NamingException {
-        Hashtable env = new Hashtable();
-        env.put(Context.INITIAL_CONTEXT_FACTORY, LDAP_FACTORY);
-        env.put(Context.PROVIDER_URL, ldapUrl);
-        env.put(Context.SECURITY_AUTHENTICATION, SECURITY_AUTHENTICATION_METHOD);
-        env.put(Context.SECURITY_CREDENTIALS, ldapPassword);
-        env.put(Context.SECURITY_PRINCIPAL, ldapUsername);
-        return new InitialDirContext(env);
-    }
+
 
     public String searchQueryLDAP() {
-        DirContext ctx = null;
         NamingEnumeration results = null;
         ObjectMapper mapper = new ObjectMapper();
         Response response;
@@ -192,10 +179,10 @@ public class LDAPClient {
         }
 
         try {
-            ctx = connect();
+            ldapConnection = LDAPConnectionUtility.connect(ldapUrl, ldapUsername, ldapPassword);
             SearchControls controls = new SearchControls();
             controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            results = ctx.search(ldapSearchBase, ldapSearchFilter, controls);
+            results = ldapConnection.search(ldapSearchBase, ldapSearchFilter, controls);
 
             //iterate throw all attributes in the result of search query
             while (results.hasMore()) {
@@ -209,7 +196,9 @@ public class LDAPClient {
                         attrMap.put(attrId, attr.get().toString());
                     }
                 }
-                attributesList.add(attrMap);
+                if (!attrMap.isEmpty()) {
+                    attributesList.add(attrMap);
+                }
             }
             response = new LDAPResponse("Ok", attributesList);
         } catch (Exception e) {
@@ -221,9 +210,9 @@ public class LDAPClient {
                 } catch (Exception e) {
                 }
             }
-            if (ctx != null) {
+            if (ldapConnection != null) {
                 try {
-                    ctx.close();
+                    ldapConnection.close();
                 } catch (Exception e) {
                 }
             }
@@ -234,39 +223,5 @@ public class LDAPClient {
             e.printStackTrace();
         }
         return resultOutput;
-    }
-
-    public static void main(String[] args) {
-
-        String searchBase = "dc=activeeon,dc=com";
-        //        String searchFilter = "(objectclass=*)";
-
-        String searchFilter = "(cn=yaro)";
-        //        String attributesToReturnAsString = "uidNumber, cn";
-        String attributesToReturnAsString = "";
-
-        String ldapUrl = "ldap://192.168.1.136:389";
-        String ldapUsername = "cn=admin,dc=activeeon,dc=com";
-        String ldapPassword = "activeeon";
-
-        LDAPClient ldapClient = new LDAPClient(ldapUrl,
-                                               "cn=admin,dc=activeeon,dc=com",
-                                               "activeeon",
-                                               searchBase,
-                                               searchFilter,
-                                               attributesToReturnAsString);
-
-        System.out.println(ldapClient.searchQueryLDAP());
-
-        Map mapVariables = new HashMap();
-        mapVariables.put("ldapUrl", ldapUrl);
-        mapVariables.put("ldapSearchBase", searchBase);
-        mapVariables.put("ldapSearchFilter", searchFilter);
-        mapVariables.put("ldapSelectedAttributes", attributesToReturnAsString);
-        Map mapCredentials = new HashMap();
-        mapCredentials.put("ldapUsername", ldapUsername);
-        mapCredentials.put("ldapPassword", ldapPassword);
-        LDAPClient ldapClientFromMap = new LDAPClient(mapVariables, mapCredentials);
-        System.out.println(ldapClientFromMap.searchQueryLDAP());
     }
 }

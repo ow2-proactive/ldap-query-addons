@@ -29,9 +29,11 @@ import java.util.List;
 import java.util.Map;
 
 import lombok.Getter;
+import lombok.NoArgsConstructor;
 
 
 @Getter
+@NoArgsConstructor
 public class LDAPResponse extends Response {
     private List<Map<String, String>> attributes;
 
