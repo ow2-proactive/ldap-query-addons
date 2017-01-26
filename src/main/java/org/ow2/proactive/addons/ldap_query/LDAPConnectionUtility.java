@@ -44,7 +44,7 @@ public class LDAPConnectionUtility {
     private final static String SECURITY_AUTHENTICATION_METHOD = "simple";
 
     public static DirContext connect(String ldapUrl, String ldapUsername, String ldapPassword) throws NamingException {
-        Hashtable env = new Hashtable();
+        Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, LDAP_FACTORY);
         env.put(Context.PROVIDER_URL, ldapUrl);
         env.put(Context.SECURITY_AUTHENTICATION, SECURITY_AUTHENTICATION_METHOD);

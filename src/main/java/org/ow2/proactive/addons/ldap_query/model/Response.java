@@ -25,6 +25,7 @@
  */
 package org.ow2.proactive.addons.ldap_query.model;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
@@ -38,6 +39,7 @@ import lombok.ToString;
 @Getter
 @NoArgsConstructor
 @ToString
+@AllArgsConstructor
 public abstract class Response {
     protected String status;
 }

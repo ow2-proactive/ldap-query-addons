@@ -23,31 +23,7 @@
  * If needed, contact us to obtain a release under GPL Version 2 or 3
  * or a different license than the AGPL.
  */
-package org.ow2.proactive.addons.ldap_query;/*
-                                            * ProActive Parallel Suite(TM):
-                                            * The Open Source library for parallel and distributed
-                                            * Workflows & Scheduling, Orchestration, Cloud Automation
-                                            * and Big Data Analysis on Enterprise Grids & Clouds.
-                                            *
-                                            * Copyright (c) 2007 - 2017 ActiveEon
-                                            * Contact: contact@activeeon.com
-                                            *
-                                            * This library is free software: you can redistribute it and/or
-                                            * modify it under the terms of the GNU Affero General Public License
-                                            * as published by the Free Software Foundation: version 3 of
-                                            * the License.
-                                            *
-                                            * This program is distributed in the hope that it will be useful,
-                                            * but WITHOUT ANY WARRANTY; without even the implied warranty of
-                                            * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-                                            * GNU Affero General Public License for more details.
-                                            *
-                                            * You should have received a copy of the GNU Affero General Public License
-                                            * along with this program. If not, see <http://www.gnu.org/licenses/>.
-                                            *
-                                            * If needed, contact us to obtain a release under GPL Version 2 or 3
-                                            * or a different license than the AGPL.
-                                            */
+package org.ow2.proactive.addons.ldap_query;
 
 import java.io.Serializable;
 import java.util.Arrays;
@@ -70,6 +46,7 @@ import org.ow2.proactive.addons.ldap_query.model.Response;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.ImmutableList;
 
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -97,41 +74,30 @@ public class LDAPClient {
 
     public static final String ARG_SELECTED_ATTRIBUTES = "ldapSelectedAttributes";
 
-    protected String ldapUrl;
-
-    protected String ldapUsername;
-
-    protected String ldapPassword;
-
-    protected String ldapSearchBase;
-
-    protected String ldapSearchFilter;
-
-    protected String ldapSelectedAttributes;
+    protected Map<String, String> allLDAPClientParameters = new HashMap();
 
     protected DirContext ldapConnection;
 
     public LDAPClient(String ldapUrl, String ldapUsername, String ldapPassword, String ldapSearchBase,
             String ldapSearchFilter, String ldapSelectedAttributes) {
-        this.ldapUrl = ldapUrl;
-        this.ldapUsername = ldapUsername;
-        this.ldapPassword = ldapPassword;
-        this.ldapSearchBase = ldapSearchBase;
-        this.ldapSearchFilter = ldapSearchFilter;
-        this.ldapSelectedAttributes = ldapSelectedAttributes;
+        allLDAPClientParameters.put(ARG_URL, ldapUrl);
+        allLDAPClientParameters.put(ARG_USERNAME, ldapUsername);
+        allLDAPClientParameters.put(ARG_PASSWORD, ldapPassword);
+        allLDAPClientParameters.put(ARG_SEARCH_BASE, ldapSearchBase);
+        allLDAPClientParameters.put(ARG_SEARCH_FILTER, ldapSearchFilter);
+        allLDAPClientParameters.put(ARG_SELECTED_ATTRIBUTES, ldapSelectedAttributes);
     }
 
     public LDAPClient(Map<String, Serializable> actualTaskVariables, Map<String, Serializable> credentials) {
-        List<String> taskVariablesList = new LinkedList<>();
-        taskVariablesList.add(ARG_URL);
-        taskVariablesList.add(ARG_USERNAME);
-        taskVariablesList.add(ARG_PASSWORD);
-        taskVariablesList.add(ARG_SEARCH_BASE);
-        taskVariablesList.add(ARG_SEARCH_FILTER);
-        taskVariablesList.add(ARG_SELECTED_ATTRIBUTES);
+        ImmutableList<String> taskVariablesList = ImmutableList.of(ARG_URL,
+                                                                   ARG_USERNAME,
+                                                                   ARG_PASSWORD,
+                                                                   ARG_SEARCH_BASE,
+                                                                   ARG_SEARCH_FILTER,
+                                                                   ARG_SELECTED_ATTRIBUTES);
 
-        Map mapWithVariables;
         for (String variableName : taskVariablesList) {
+            Map<String, Serializable> mapWithVariables;
             if (actualTaskVariables.containsKey(variableName)) {
                 mapWithVariables = actualTaskVariables;
             } else {
@@ -145,12 +111,7 @@ public class LDAPClient {
         if (!taskVariablesMap.containsKey(variableName)) {
             throw new IllegalArgumentException("The missed argument for LDAPClient, variable name: " + variableName);
         }
-        String varValue = getAsString(taskVariablesMap, variableName);
-        try {
-            this.getClass().getDeclaredField(variableName).set(this, varValue);
-        } catch (Exception e) {
-            throw new IllegalArgumentException("The variable name is wrong:" + variableName, e);
-        }
+        allLDAPClientParameters.put(variableName, (String) taskVariablesMap.get(variableName));
     }
 
     private String getAsString(Map<String, Serializable> map, String argFrom) {
@@ -172,10 +133,10 @@ public class LDAPClient {
         Response response;
         boolean allAttrs = false;
         String resultOutput = new String();
-        List attributesList = new LinkedList();
-        HashSet<String> attrReturn = new HashSet();
+        List<Map<String, String>> attributesList = new LinkedList<>();
+        HashSet<String> attrReturn = new HashSet<>();
 
-        String[] attributesToReturn = splitAttributes(ldapSelectedAttributes);
+        String[] attributesToReturn = splitAttributes(allLDAPClientParameters.get(ARG_SELECTED_ATTRIBUTES));
 
         if (attributesToReturn.length == 0) {
             allAttrs = true;
@@ -184,16 +145,20 @@ public class LDAPClient {
         }
 
         try {
-            ldapConnection = LDAPConnectionUtility.connect(ldapUrl, ldapUsername, ldapPassword);
+            ldapConnection = LDAPConnectionUtility.connect(allLDAPClientParameters.get(ARG_URL),
+                                                           allLDAPClientParameters.get(ARG_USERNAME),
+                                                           allLDAPClientParameters.get(ARG_PASSWORD));
             SearchControls controls = new SearchControls();
             controls.setSearchScope(SearchControls.SUBTREE_SCOPE);
-            results = ldapConnection.search(ldapSearchBase, ldapSearchFilter, controls);
+            results = ldapConnection.search(allLDAPClientParameters.get(ARG_SEARCH_BASE),
+                                            allLDAPClientParameters.get(ARG_SEARCH_FILTER),
+                                            controls);
 
             //iterate throw all attributes in the result of search query
             while (results.hasMore()) {
                 SearchResult searchResult = (SearchResult) results.next();
                 Attributes attributes = searchResult.getAttributes();
-                Map<String, String> attrMap = new HashMap();
+                Map<String, String> attrMap = new HashMap<>();
                 for (NamingEnumeration ae = attributes.getAll(); ae.hasMore();) {
                     Attribute attr = (Attribute) ae.next();
                     String attrId = attr.getID();
@@ -213,12 +178,14 @@ public class LDAPClient {
                 try {
                     results.close();
                 } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
             if (ldapConnection != null) {
                 try {
                     ldapConnection.close();
                 } catch (Exception e) {
+                    e.printStackTrace();
                 }
             }
         }
