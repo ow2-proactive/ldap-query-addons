@@ -80,8 +80,9 @@ import org.powermock.modules.junit4.PowerMockRunner;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 
+
 @RunWith(PowerMockRunner.class)
-@PrepareForTest({ LDAPConnectionUtility.class})
+@PrepareForTest({ LDAPConnectionUtility.class })
 public class LDAPClientTest {
     private LDAPClient ldapClient;
 
@@ -91,10 +92,15 @@ public class LDAPClientTest {
     private DirContext ldapConnection;
 
     private String ldapUrl = "ldap://localhost:389";
+
     private String ldapSearchBase = "dc=yourOrganization,dc=com";
+
     private String ldapSearchFilter = "(objectclass=*)";
+
     private String ldapSelectedAttributes = "attributeName1,attributeName2";
+
     private String ldapUsername = "cn=admin,dc=com";
+
     private String ldapPassword = "adminPassword";
 
     @Before
@@ -133,12 +139,16 @@ public class LDAPClientTest {
     public void testOkResultSearchQueryLDAP() throws NamingException, IOException {
         PowerMockito.mockStatic(LDAPConnectionUtility.class);
         try {
-            when(LDAPConnectionUtility.connect(ldapUrl,ldapUsername, ldapPassword)).thenReturn(ldapConnection);
+            when(LDAPConnectionUtility.connect(ldapUrl, ldapUsername, ldapPassword)).thenReturn(ldapConnection);
         } catch (NamingException e) {
             e.printStackTrace();
         }
-        ldapClient = new LDAPClient(ldapUrl, ldapUsername, ldapPassword, ldapSearchBase, ldapSearchFilter, ldapSelectedAttributes, null);
-
+        ldapClient = new LDAPClient(ldapUrl,
+                                    ldapUsername,
+                                    ldapPassword,
+                                    ldapSearchBase,
+                                    ldapSearchFilter,
+                                    ldapSelectedAttributes);
 
         NamingEnumeration results = mock(NamingEnumeration.class);
         when(ldapConnection.search(anyString(), anyString(), any(SearchControls.class))).thenReturn(results);
@@ -152,7 +162,12 @@ public class LDAPClientTest {
 
     @Test
     public void testErrorResultSearchQueryLDAP() throws NamingException, IOException {
-        ldapClient = new LDAPClient(ldapUrl, ldapUsername, ldapPassword, ldapSearchBase, ldapSearchFilter, ldapSelectedAttributes, null);
+        ldapClient = new LDAPClient(ldapUrl,
+                                    ldapUsername,
+                                    ldapPassword,
+                                    ldapSearchBase,
+                                    ldapSearchFilter,
+                                    ldapSelectedAttributes);
         String jsonResponse = ldapClient.searchQueryLDAP();
         Response response = mapper.readValue(jsonResponse, ErrorResponse.class);
         assertThat(response.getStatus(), is("Error"));

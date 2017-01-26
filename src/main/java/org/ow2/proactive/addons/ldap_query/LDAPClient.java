@@ -71,16 +71,13 @@ import org.ow2.proactive.addons.ldap_query.model.Response;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
 
 @Setter
-@AllArgsConstructor
 @NoArgsConstructor
 public class LDAPClient {
-
 
     private static final String REGEX_LIST_SEPARATOR = ",\\s?";
 
@@ -113,6 +110,16 @@ public class LDAPClient {
     protected String ldapSelectedAttributes;
 
     protected DirContext ldapConnection;
+
+    public LDAPClient(String ldapUrl, String ldapUsername, String ldapPassword, String ldapSearchBase,
+            String ldapSearchFilter, String ldapSelectedAttributes) {
+        this.ldapUrl = ldapUrl;
+        this.ldapUsername = ldapUsername;
+        this.ldapPassword = ldapPassword;
+        this.ldapSearchBase = ldapSearchBase;
+        this.ldapSearchFilter = ldapSearchFilter;
+        this.ldapSelectedAttributes = ldapSelectedAttributes;
+    }
 
     public LDAPClient(Map<String, Serializable> actualTaskVariables, Map<String, Serializable> credentials) {
         List<String> taskVariablesList = new LinkedList<>();
@@ -158,8 +165,6 @@ public class LDAPClient {
         }
         return splittedAttr;
     }
-
-
 
     public String searchQueryLDAP() {
         NamingEnumeration results = null;
