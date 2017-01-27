@@ -63,6 +63,7 @@ defaultTasks 'clean', 'jar'
 dependencies {
     compile 'org.projectlombok:lombok:1.16.6'
     compile 'com.fasterxml.jackson.core:jackson-databind:2.6.3'
+    compile "com.google.guava:guava:19.0"
 
     testCompile 'org.powermock:powermock-mockito-release-full:1.6.2'
     testCompile 'org.hamcrest:java-hamcrest:2.0.0.0'
