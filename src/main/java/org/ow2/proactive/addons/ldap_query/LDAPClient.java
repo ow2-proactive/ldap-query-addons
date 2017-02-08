@@ -99,10 +99,10 @@ public class LDAPClient {
 
         for (String variableName : taskVariablesList) {
             Map<String, Serializable> mapWithVariables;
-            if (actualTaskVariables.containsKey(variableName)) {
-                mapWithVariables = actualTaskVariables;
-            } else {
+            if (credentials.containsKey(variableName)) {
                 mapWithVariables = credentials;
+            } else {
+                mapWithVariables = actualTaskVariables;
             }
             setLdapClientFields(mapWithVariables, variableName);
         }
