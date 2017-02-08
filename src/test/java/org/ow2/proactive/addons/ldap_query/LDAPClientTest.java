@@ -69,13 +69,15 @@ public class LDAPClientTest {
 
     private String ldapUrl = "ldap://localhost:389";
 
-    private String ldapSearchBase = "dc=yourOrganization,dc=com";
+    private String ldapDnBase = "dc=yourOrganization,dc=com";
+
+    private String ldapSearchBase = "dc=sophia";
 
     private String ldapSearchFilter = "(objectclass=*)";
 
     private String ldapSelectedAttributes = "attributeName1,attributeName2";
 
-    private String ldapUsername = "cn=admin,dc=com";
+    private String ldapUsername = "cn=admin,ou=users";
 
     private String ldapPassword = "adminPassword";
 
@@ -88,6 +90,7 @@ public class LDAPClientTest {
     public void testLDAPClientConstructFromMaps() {
         Map mapVariables = new HashMap();
         mapVariables.put("ldapUrl", ldapUrl);
+        mapVariables.put("ldapDnBase", ldapDnBase);
         mapVariables.put("ldapSearchBase", ldapSearchBase);
         mapVariables.put("ldapSearchFilter", ldapSearchFilter);
         mapVariables.put("ldapSelectedAttributes", ldapSelectedAttributes);
