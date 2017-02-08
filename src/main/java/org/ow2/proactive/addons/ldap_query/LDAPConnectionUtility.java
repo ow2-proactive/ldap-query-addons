@@ -43,7 +43,8 @@ public class LDAPConnectionUtility {
 
     private final static String SECURITY_AUTHENTICATION_METHOD = "simple";
 
-    public static DirContext connect(String ldapUrl, String ldapDnBase, String ldapUsername, String ldapPassword) throws NamingException {
+    public static DirContext connect(String ldapUrl, String ldapDnBase, String ldapUsername, String ldapPassword)
+            throws NamingException {
         Hashtable<String, String> env = new Hashtable<>();
         env.put(Context.INITIAL_CONTEXT_FACTORY, LDAP_FACTORY);
         env.put(Context.PROVIDER_URL, ldapUrl);
@@ -52,12 +53,10 @@ public class LDAPConnectionUtility {
         env.put(Context.SECURITY_PRINCIPAL, getFullLdapUserName(ldapDnBase, ldapUsername));
         return new InitialDirContext(env);
     }
-    
+
     private static String getFullLdapUserName(String ldapDnBase, String ldapUsername) {
         StringBuilder fullUserName = new StringBuilder();
-        fullUserName.append(ldapUsername)
-                .append(',')
-                .append(ldapDnBase);
+        fullUserName.append(ldapUsername).append(',').append(ldapDnBase);
         return fullUserName.toString();
     }
 }

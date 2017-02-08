@@ -77,8 +77,8 @@ public class LDAPClient {
 
     protected DirContext ldapConnection;
 
-    public LDAPClient(String ldapUrl, String ldapDnBase, String ldapUsername, String ldapPassword, String ldapSearchBase,
-            String ldapSearchFilter, String ldapSelectedAttributes) {
+    public LDAPClient(String ldapUrl, String ldapDnBase, String ldapUsername, String ldapPassword,
+            String ldapSearchBase, String ldapSearchFilter, String ldapSelectedAttributes) {
         allLDAPClientParameters.put(ARG_URL, ldapUrl);
         allLDAPClientParameters.put(ARG_DN_BASE, ldapDnBase);
         allLDAPClientParameters.put(ARG_USERNAME, ldapUsername);
@@ -147,7 +147,7 @@ public class LDAPClient {
                 controls.setReturningAttributes(attributesToReturn);
             }
             results = ldapConnection.search(getFullLdapSearchBase(allLDAPClientParameters.get(ARG_DN_BASE),
-                    allLDAPClientParameters.get(ARG_SEARCH_BASE)),
+                                                                  allLDAPClientParameters.get(ARG_SEARCH_BASE)),
                                             allLDAPClientParameters.get(ARG_SEARCH_FILTER),
                                             controls);
 
@@ -198,9 +198,7 @@ public class LDAPClient {
             return ldapSearchBase;
         }
         StringBuilder fullSearchBase = new StringBuilder();
-        fullSearchBase.append(ldapSearchBase)
-                .append(',')
-                .append(ldapDnBase);
+        fullSearchBase.append(ldapSearchBase).append(',').append(ldapDnBase);
         return fullSearchBase.toString();
     }
 }
