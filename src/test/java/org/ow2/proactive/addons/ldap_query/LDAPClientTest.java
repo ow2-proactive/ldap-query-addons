@@ -119,11 +119,15 @@ public class LDAPClientTest {
     public void testOkResultSearchQueryLDAP() throws NamingException, IOException {
         PowerMockito.mockStatic(LDAPConnectionUtility.class);
         try {
-            when(LDAPConnectionUtility.connect(ldapUrl, ldapUsername, ldapPassword)).thenReturn(ldapConnection);
+            when(LDAPConnectionUtility.connect(ldapUrl,
+                                               ldapDnBase,
+                                               ldapUsername,
+                                               ldapPassword)).thenReturn(ldapConnection);
         } catch (NamingException e) {
             e.printStackTrace();
         }
         ldapClient = new LDAPClient(ldapUrl,
+                                    ldapDnBase,
                                     ldapUsername,
                                     ldapPassword,
                                     ldapSearchBase,
@@ -143,6 +147,7 @@ public class LDAPClientTest {
     @Test
     public void testErrorResultSearchQueryLDAP() throws NamingException, IOException {
         ldapClient = new LDAPClient(ldapUrl,
+                                    ldapDnBase,
                                     ldapUsername,
                                     ldapPassword,
                                     ldapSearchBase,
