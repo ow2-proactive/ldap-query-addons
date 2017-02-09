@@ -195,7 +195,7 @@ public class LDAPClient {
 
     private static String getFullLdapSearchBase(String ldapDnBase, String ldapSearchBase) {
         if (ldapSearchBase.isEmpty()) {
-            return ldapSearchBase;
+            return ldapDnBase;
         }
         StringBuilder fullSearchBase = new StringBuilder();
         fullSearchBase.append(ldapSearchBase).append(',').append(ldapDnBase);
