@@ -156,7 +156,7 @@ public class LDAPClient {
                 SearchResult searchResult = (SearchResult) results.next();
                 Attributes attributes = searchResult.getAttributes();
 
-                if (attributes != null) {
+                if (attributes != null && attributes.size() > 0) {
                     NamingEnumeration ae = attributes.getAll();
                     Map<String, String> attributesMap = new HashMap<>();
                     while (ae.hasMore()) {
