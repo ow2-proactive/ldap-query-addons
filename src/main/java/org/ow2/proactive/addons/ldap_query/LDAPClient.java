@@ -77,17 +77,6 @@ public class LDAPClient {
 
     protected DirContext ldapConnection;
 
-    public LDAPClient(String ldapUrl, String ldapDnBase, String ldapUsername, String ldapPassword,
-            String ldapSearchBase, String ldapSearchFilter, String ldapSelectedAttributes) {
-        allLDAPClientParameters.put(ARG_URL, ldapUrl);
-        allLDAPClientParameters.put(ARG_DN_BASE, ldapDnBase);
-        allLDAPClientParameters.put(ARG_USERNAME, ldapUsername);
-        allLDAPClientParameters.put(ARG_PASSWORD, ldapPassword);
-        allLDAPClientParameters.put(ARG_SEARCH_BASE, ldapSearchBase);
-        allLDAPClientParameters.put(ARG_SEARCH_FILTER, ldapSearchFilter);
-        allLDAPClientParameters.put(ARG_SELECTED_ATTRIBUTES, ldapSelectedAttributes);
-    }
-
     public LDAPClient(Map<String, Serializable> actualTaskVariables, Map<String, Serializable> credentials) {
         ImmutableList<String> taskVariablesList = ImmutableList.of(ARG_URL,
                                                                    ARG_DN_BASE,
