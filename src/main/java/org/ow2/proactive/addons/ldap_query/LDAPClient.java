@@ -98,21 +98,16 @@ public class LDAPClient {
                                                                    ARG_SELECTED_ATTRIBUTES);
 
         for (String variableName : taskVariablesList) {
-            Map<String, Serializable> mapWithVariables;
-            if (credentials.containsKey(variableName)) {
-                mapWithVariables = credentials;
-            } else {
-                mapWithVariables = actualTaskVariables;
-            }
-            setLdapClientFields(mapWithVariables, variableName);
+            Serializable value = credentials.getOrDefault(variableName, actualTaskVariables.get(variableName));
+            setLdapClientFields(variableName, value);
         }
     }
 
-    private void setLdapClientFields(Map<String, Serializable> taskVariablesMap, String variableName) {
-        if (!taskVariablesMap.containsKey(variableName)) {
+    private void setLdapClientFields(String variableName, Serializable value) {
+        if (value == null) {
             throw new IllegalArgumentException("The missed argument for LDAPClient, variable name: " + variableName);
         }
-        allLDAPClientParameters.put(variableName, (String) taskVariablesMap.get(variableName));
+        allLDAPClientParameters.put(variableName, (String) value);
     }
 
     private String getAsString(Map<String, Serializable> map, String argFrom) {
