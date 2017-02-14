@@ -30,6 +30,7 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 import javax.naming.NamingEnumeration;
 import javax.naming.directory.Attribute;
@@ -88,19 +89,11 @@ public class LDAPClient {
 
         for (String variableName : taskVariablesList) {
             Serializable value = credentials.getOrDefault(variableName, actualTaskVariables.get(variableName));
-            setLdapClientFields(variableName, value);
+            allLDAPClientParameters.put(variableName,
+                                        (String) Optional.ofNullable(value)
+                                                         .orElseThrow(() -> new IllegalArgumentException("The missed argument for LDAPClient, variable name: " +
+                                                                                                         variableName)));
         }
-    }
-
-    private void setLdapClientFields(String variableName, Serializable value) {
-        if (value == null) {
-            throw new IllegalArgumentException("The missed argument for LDAPClient, variable name: " + variableName);
-        }
-        allLDAPClientParameters.put(variableName, (String) value);
-    }
-
-    private String getAsString(Map<String, Serializable> map, String argFrom) {
-        return (String) map.get(argFrom);
     }
 
     private String[] splitAttributes(String attrList) {
