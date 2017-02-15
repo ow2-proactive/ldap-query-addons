@@ -69,13 +69,15 @@ public class LDAPClientTest {
 
     private String ldapUrl = "ldap://localhost:389";
 
-    private String ldapSearchBase = "dc=yourOrganization,dc=com";
+    private String ldapDnBase = "dc=yourOrganization,dc=com";
+
+    private String ldapSearchBase = "dc=sophia";
 
     private String ldapSearchFilter = "(objectclass=*)";
 
     private String ldapSelectedAttributes = "attributeName1,attributeName2";
 
-    private String ldapUsername = "cn=admin,dc=com";
+    private String ldapUsername = "cn=admin,ou=users";
 
     private String ldapPassword = "adminPassword";
 
@@ -86,15 +88,7 @@ public class LDAPClientTest {
 
     @Test
     public void testLDAPClientConstructFromMaps() {
-        Map mapVariables = new HashMap();
-        mapVariables.put("ldapUrl", ldapUrl);
-        mapVariables.put("ldapSearchBase", ldapSearchBase);
-        mapVariables.put("ldapSearchFilter", ldapSearchFilter);
-        mapVariables.put("ldapSelectedAttributes", ldapSelectedAttributes);
-        Map mapCredentials = new HashMap();
-        mapCredentials.put("ldapUsername", ldapUsername);
-        mapCredentials.put("ldapPassword", ldapPassword);
-        ldapClient = new LDAPClient(mapVariables, mapCredentials);
+        ldapClient = getLdapClient();
 
         assertThat(ldapClient.allLDAPClientParameters.get(LDAPClient.ARG_URL), is(ldapUrl));
         assertThat(ldapClient.allLDAPClientParameters.get(LDAPClient.ARG_SEARCH_BASE), is(ldapSearchBase));
@@ -116,16 +110,14 @@ public class LDAPClientTest {
     public void testOkResultSearchQueryLDAP() throws NamingException, IOException {
         PowerMockito.mockStatic(LDAPConnectionUtility.class);
         try {
-            when(LDAPConnectionUtility.connect(ldapUrl, ldapUsername, ldapPassword)).thenReturn(ldapConnection);
+            when(LDAPConnectionUtility.connect(ldapUrl,
+                                               ldapDnBase,
+                                               ldapUsername,
+                                               ldapPassword)).thenReturn(ldapConnection);
         } catch (NamingException e) {
             e.printStackTrace();
         }
-        ldapClient = new LDAPClient(ldapUrl,
-                                    ldapUsername,
-                                    ldapPassword,
-                                    ldapSearchBase,
-                                    ldapSearchFilter,
-                                    ldapSelectedAttributes);
+        ldapClient = getLdapClient();
 
         NamingEnumeration results = mock(NamingEnumeration.class);
         when(ldapConnection.search(anyString(), anyString(), any(SearchControls.class))).thenReturn(results);
@@ -139,15 +131,23 @@ public class LDAPClientTest {
 
     @Test
     public void testErrorResultSearchQueryLDAP() throws NamingException, IOException {
-        ldapClient = new LDAPClient(ldapUrl,
-                                    ldapUsername,
-                                    ldapPassword,
-                                    ldapSearchBase,
-                                    ldapSearchFilter,
-                                    ldapSelectedAttributes);
+        ldapClient = getLdapClient();
         String jsonResponse = ldapClient.searchQueryLDAP();
         Response response = mapper.readValue(jsonResponse, ErrorResponse.class);
         assertThat(response.getStatus(), is("Error"));
     }
 
+    private LDAPClient getLdapClient() {
+        Map mapVariables = new HashMap();
+        mapVariables.put("ldapUrl", ldapUrl);
+        mapVariables.put("ldapDnBase", ldapDnBase);
+        mapVariables.put("ldapSearchBase", ldapSearchBase);
+        mapVariables.put("ldapSearchFilter", ldapSearchFilter);
+        mapVariables.put("ldapSelectedAttributes", ldapSelectedAttributes);
+        Map mapCredentials = new HashMap();
+        mapCredentials.put("ldapUsername", ldapUsername);
+        mapCredentials.put("ldapPassword", ldapPassword);
+        ldapClient = new LDAPClient(mapVariables, mapCredentials);
+        return ldapClient;
+    }
 }
