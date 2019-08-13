@@ -1,3 +1,5 @@
+import com.github.jk1.license.render.*
+
 buildscript {
     repositories {
         mavenCentral()
@@ -13,6 +15,7 @@ buildscript {
     dependencies {
         classpath "com.diffplug.gradle.spotless:spotless:2.4.0"
         classpath "org.ow2.proactive:coding-rules:1.0.0"
+        classpath 'com.github.jk1:gradle-license-report:1.7'
     }
     dependencies {
         delete "gradle/ext"
@@ -25,8 +28,13 @@ version projectVersion
 
 apply plugin: 'java'
 apply plugin: 'maven'
-
+apply plugin: 'com.github.jk1.dependency-license-report'
 apply from: "$rootDir/gradle/ext/coding-format.gradle"
+
+licenseReport {
+    configurations = ['runtime']
+    renderers = [new InventoryHtmlReportRenderer()]
+}
 
 configurations {
     integrationTestCompile.extendsFrom testCompile
