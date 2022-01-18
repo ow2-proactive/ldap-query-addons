@@ -3,7 +3,6 @@ import com.github.jk1.license.render.*
 buildscript {
     repositories {
         mavenCentral()
-        jcenter()
         maven {
             url "https://plugins.gradle.org/m2/"
         }
@@ -47,7 +46,7 @@ compileJava {
 }
 
 repositories {
-    jcenter()
+    mavenCentral()
 }
 
 uploadArchives {
