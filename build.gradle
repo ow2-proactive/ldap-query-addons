@@ -69,7 +69,7 @@ defaultTasks 'clean', 'jar'
 
 dependencies {
     compile 'org.projectlombok:lombok:1.16.6'
-    compile 'com.fasterxml.jackson.core:jackson-databind:2.7.9'
+    compile 'com.fasterxml.jackson.core:jackson-databind:2.13.4.2'
     compile "com.google.guava:guava:19.0"
 
     testCompile 'org.powermock:powermock-mockito-release-full:1.6.2'
@@ -81,7 +81,8 @@ dependencies {
 jar {
     from {
         configurations.compile
-                .findAll { !it.name.toLowerCase().contains("slf4j") }
+                .findAll { !it.name.toLowerCase().contains("slf4j") && !it.name.contains("META-INF/maven") }
                 .collect { it.isDirectory() ? it : zipTree(it) }
     }
+    exclude 'META-INF/maven/**'
 }
